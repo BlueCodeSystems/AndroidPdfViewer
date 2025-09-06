@@ -10,7 +10,12 @@ before_install:
   - ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager "platforms;android-35" "build-tools;35.0.0" "ndk;26.2.11394342"
 
 install:
-  # Derive owner and version for JitPack coordinates and publish to local Maven
-  - OWNER=$(git config --get remote.origin.url | sed -E 's#.*[:/ ]([^/]+)/[^/]+(\.git)?$#\1#')
-  - echo "Using GROUP=com.github.${OWNER} VERSION=${VERSION} (skipSigning)"
-  - ./gradlew --no-daemon -x test -x lint -PskipSigning=true -PGROUP=com.github.${OWNER} -PVERSION_NAME=${VERSION} :android-pdf-viewer:publishToMavenLocal
+  # Derive owner from origin and set GROUP accordingly
+  - ORIGIN=$(git config --get remote.origin.url)
+  - OWNER=$(echo "$ORIGIN" | sed -E 's#.*[:/ ]([^/]+)/[^/]+(\.git)?$#\1#')
+  - OWNER_LC=$(echo "$OWNER" | tr '[:upper:]' '[:lower:]')
+  - if echo "$OWNER_LC" | grep -qi 'bluecode'; then GROUP=bluecode; else GROUP=com.github.${OWNER}; fi
+  - echo "Origin=$ORIGIN Owner=$OWNER Using GROUP=${GROUP} VERSION=${VERSION} (skipSigning)"
+  - ./gradlew --no-daemon -x test -x lint -PskipSigning=true -PGROUP=${GROUP} -PVERSION_NAME=${VERSION} :android-pdf-viewer:publishToMavenLocal
+  # Verify artifact installed to local Maven
+  - echo "Listing ~/.m2/repository/${GROUP}/AndroidPdfViewer/${VERSION} (if present)" && ls -la ~/.m2/repository/${GROUP}/AndroidPdfViewer/${VERSION} || true
