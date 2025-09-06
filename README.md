@@ -1,39 +1,40 @@
 
-# WARNING!
-This fork was made in order to migrate the library to AndroidX. Add-ons and updates probably will not appear.
-This fork is also published in `mavencentral` in addition to jitpack.
+# AndroidPdfViewer (BlueCodeSystems fork)
 
-[![Release](https://jitpack.io/v/TalbotGooday/AndroidPdfViewer.svg)](https://jitpack.io/#TalbotGooday/AndroidPdfViewer)
+Android view for displaying PDFs rendered via Pdfium, with gestures, zoom, and double‑tap support.
+This fork modernizes the build, publishing, and dependencies for Android SDK 35 and Maven Central.
 
-Add to _build.gradle_:
+- Min SDK 28, target/compile SDK 35
+- Gradle 8.7, AGP 8.6.0
+- Published to Maven Central under `io.github.bluecodesystems`
+
+## Installation
+
+Add repositories and dependency:
+
 ```groovy
-allprojects {
-	repositories {
-		...
-		mavenCentral()
-	}
+repositories { mavenCentral() }
+
+dependencies {
+  implementation 'io.github.bluecodesystems:AndroidPdfViewer:2.0.0'
 }
 ```
-Add the dependency
-```groovy
-// Maven Central (preferred)
-implementation 'io.github.bluecodesystems:AndroidPdfViewer:2.0.0'
 
-// Or via JitPack (alternative)
-// implementation 'com.github.BlueCodeSystems:AndroidPdfViewer:2.0.0'
+JitPack (alternative):
+
+```groovy
+repositories { maven { url 'https://jitpack.io' } }
+dependencies {
+  implementation 'com.github.BlueCodeSystems:AndroidPdfViewer:2.0.0'
+}
 ```
 
 ---
 ### Original description
 # Android PdfViewer
 
-__AndroidPdfViewer 1.x is available on [AndroidPdfViewerV1](https://github.com/barteksc/AndroidPdfViewerV1)
-repo, where can be developed independently. Version 1.x uses different engine for drawing document on canvas,
-so if you don't like 2.x version, try 1.x.__
-
 Library for displaying PDF documents on Android, with `animations`, `gestures`, `zoom` and `double tap` support.
-It is based on [PdfiumAndroid](https://github.com/barteksc/PdfiumAndroid) for decoding PDF files. Works on API 11 (Android 3.0) and higher.
-Licensed under Apache License 2.0.
+It is based on Pdfium for decoding PDF files. Licensed under Apache License 2.0.
 
 ## What's new in 3.2.0-beta.1?
 * Merge PR #714 with optimized page load
@@ -56,155 +57,104 @@ Licensed under Apache License 2.0.
 * Removed page size parameters from `OnRenderListener#onInitiallyRendered(int)` method, as document may have different page sizes
 * Removed `PDFView#setSwipeVertical()` method
 
-## Installation
+## Quickstart
 
-Add to _build.gradle_:
+Add the view to your layout:
 
-`implementation 'com.github.barteksc:android-pdf-viewer:3.2.0-beta.1'`
-
-or if you want to use more stable version:
- 
-`implementation 'com.github.barteksc:android-pdf-viewer:2.8.2'`
-
-Library is available in jcenter repository, probably it'll be in Maven Central soon.
-
-## ProGuard
-If you are using ProGuard, add following rule to proguard config file:
-
-```proguard
--keep class com.shockwave.**
-```
-
-## Include PDFView in your layout
-
-``` xml
+```xml
 <com.github.barteksc.pdfviewer.PDFView
-        android:id="@+id/pdfView"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"/>
+    android:id="@+id/pdfView"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"/>
 ```
 
-## Load a PDF file
+Load a PDF from assets (or file/uri/stream):
 
-All available options with default values:
-``` java
-pdfView.fromUri(Uri)
-or
-pdfView.fromFile(File)
-or
-pdfView.fromBytes(byte[])
-or
-pdfView.fromStream(InputStream) // stream is written to bytearray - native code cannot use Java Streams
-or
-pdfView.fromSource(DocumentSource)
-or
-pdfView.fromAsset(String)
-    .pages(0, 2, 1, 3, 3, 3) // all pages are displayed by default
-    .enableSwipe(true) // allows to block changing pages using swipe
-    .swipeHorizontal(false)
-    .enableDoubletap(true)
-    .defaultPage(0)
-    // allows to draw something on the current page, usually visible in the middle of the screen
-    .onDraw(onDrawListener)
-    // allows to draw something on all pages, separately for every page. Called only for visible pages
-    .onDrawAll(onDrawListener)
-    .onLoad(onLoadCompleteListener) // called after document is loaded and starts to be rendered
-    .onPageChange(onPageChangeListener)
-    .onPageScroll(onPageScrollListener)
-    .onError(onErrorListener)
-    .onPageError(onPageErrorListener)
-    .onRender(onRenderListener) // called after document is rendered for the first time
-    // called on single tap, return true if handled, false to toggle scroll handle visibility
-    .onTap(onTapListener)
-    .onLongPress(onLongPressListener)
-    .enableAnnotationRendering(false) // render annotations (such as comments, colors or forms)
-    .password(null)
-    .scrollHandle(null)
-    .enableAntialiasing(true) // improve rendering a little bit on low-res screens
-    // spacing between pages in dp. To define spacing color, set view background
-    .spacing(0)
-    .autoSpacing(false) // add dynamic spacing to fit each page on its own on the screen
-    .linkHandler(DefaultLinkHandler)
-    .pageFitPolicy(FitPolicy.WIDTH) // mode to fit pages in the view
-    .fitEachPage(false) // fit each page to the view, else smaller pages are scaled relative to largest page.
-    .pageSnap(false) // snap pages to screen boundaries
-    .pageFling(false) // make a fling change only a single page like ViewPager
-    .nightMode(false) // toggle night mode
-    .load();
+```kotlin
+val pdfView = findViewById<PDFView>(R.id.pdfView)
+pdfView.fromAsset("sample.pdf")
+  .enableSwipe(true)
+  .swipeHorizontal(false)
+  .enableDoubletap(true)
+  .defaultPage(0)
+  .enableAnnotationRendering(false)
+  .spacing(0)
+  .pageFitPolicy(FitPolicy.WIDTH)
+  .load()
 ```
 
-* `pages` is optional, it allows you to filter and order the pages of the PDF as you need
+See the `sample` module for a working example.
 
-## Scroll handle
+## Requirements
 
-Scroll handle is replacement for **ScrollBar** from 1.x branch.
+- JDK 17+
+- Android SDK 35, Build Tools 35.0.0
+- NDK 26.2.11394342 (via `gradle.properties` as `android.ndkVersion`)
 
-From version 2.1.0 putting **PDFView** in **RelativeLayout** to use **ScrollHandle** is not required, you can use any layout.
+## Pdfium dependency
 
-To use scroll handle just register it using method `Configurator#scrollHandle()`.
-This method accepts implementations of **ScrollHandle** interface.
+By default this fork depends on `com.github.BlueCodeSystems:PdfiumAndroid:v2.0.0`.
+You can override it at build time:
 
-There is default implementation shipped with AndroidPdfViewer, and you can use it with
-`.scrollHandle(new DefaultScrollHandle(this))`.
-**DefaultScrollHandle** is placed on the right (when scrolling vertically) or on the bottom (when scrolling horizontally).
-By using constructor with second argument (`new DefaultScrollHandle(this, true)`), handle can be placed left or top.
-
-You can also create custom scroll handles, just implement **ScrollHandle** interface.
-All methods are documented as Javadoc comments on interface [source](https://github.com/barteksc/AndroidPdfViewer/tree/master/android-pdf-viewer/src/main/java/com/github/barteksc/pdfviewer/scroll/ScrollHandle.java).
-
-## Document sources
-Version 2.3.0 introduced _document sources_, which are just providers for PDF documents.
-Every provider implements **DocumentSource** interface.
-Predefined providers are available in **com.github.barteksc.pdfviewer.source** package and can be used as
-samples for creating custom ones.
-
-Predefined providers can be used with shorthand methods:
+```bash
+./gradlew :android-pdf-viewer:assembleRelease \
+  -PPDFIUM_GROUP=com.github.BlueCodeSystems \
+  -PPDFIUM_ARTIFACT=PdfiumAndroid \
+  -PPDFIUM_VERSION=v2.0.0
 ```
-pdfView.fromUri(Uri)
-pdfView.fromFile(File)
-pdfView.fromBytes(byte[])
-pdfView.fromStream(InputStream)
-pdfView.fromAsset(String)
+
+Or set in `gradle.properties`:
+
 ```
-Custom providers may be used with `pdfView.fromSource(DocumentSource)` method.
-
-## Links
-Version 3.0.0 introduced support for links in PDF documents. By default, **DefaultLinkHandler**
-is used and clicking on link that references page in same document causes jump to destination page
-and clicking on link that targets some URI causes opening it in default application.
-
-You can also create custom link handlers, just implement **LinkHandler** interface and set it using
-`Configurator#linkHandler(LinkHandler)` method. Take a look at [DefaultLinkHandler](https://github.com/barteksc/AndroidPdfViewer/tree/master/android-pdf-viewer/src/main/java/com/github/barteksc/pdfviewer/link/DefaultLinkHandler.java)
-source to implement custom behavior.
-
-## Pages fit policy
-Since version 3.0.0, library supports fitting pages into the screen in 3 modes:
-* WIDTH - width of widest page is equal to screen width
-* HEIGHT - height of highest page is equal to screen height
-* BOTH - based on widest and highest pages, every page is scaled to be fully visible on screen
-
-Apart from selected policy, every page is scaled to have size relative to other pages.
-
-Fit policy can be set using `Configurator#pageFitPolicy(FitPolicy)`. Default policy is **WIDTH**.
-
-## Additional options
-
-### Bitmap quality
-By default, generated bitmaps are _compressed_ with `RGB_565` format to reduce memory consumption.
-Rendering with `ARGB_8888` can be forced by using `pdfView.useBestQuality(true)` method.
-
-### Double tap zooming
-There are three zoom levels: min (default 1), mid (default 1.75) and max (default 3). On first double tap,
-view is zoomed to mid level, on second to max level, and on third returns to min level.
-If you are between mid and max levels, double tapping causes zooming to max and so on.
-
-Zoom levels can be changed using following methods:
-
-``` java
-void setMinZoom(float zoom);
-void setMidZoom(float zoom);
-void setMaxZoom(float zoom);
+PDFIUM_GROUP=com.github.BlueCodeSystems
+PDFIUM_ARTIFACT=PdfiumAndroid
+PDFIUM_VERSION=v2.0.0
 ```
+
+## Build
+
+- Clean + build: `./gradlew clean build`
+- Library AAR (release): `./gradlew :android-pdf-viewer:assembleRelease`
+  - Output: `android-pdf-viewer/build/outputs/aar/android-pdf-viewer-release.aar`
+- Sample app (debug): `./gradlew :sample:assembleDebug`
+
+## Publish
+
+Local Maven:
+
+```bash
+./gradlew :android-pdf-viewer:publishToMavenLocal
+```
+
+Maven Central (bundle zip for manual upload):
+
+```bash
+./gradlew -PcentralBundle=true -PuseGpgCmd=true \
+  :android-pdf-viewer:publishMavenPublicationToCentralBundleRepository \
+  :android-pdf-viewer:generateCentralBundleChecksums \
+  :android-pdf-viewer:zipCentralBundle
+```
+
+Sonatype (staging → release):
+
+```bash
+export ORG_GRADLE_PROJECT_sonatypeUsername='TOKEN_USER'
+export ORG_GRADLE_PROJECT_sonatypePassword='TOKEN_PASS'
+./gradlew :android-pdf-viewer:publish -PuseGpgCmd=true -PcentralRelease=true
+./gradlew closeAndReleaseRepository
+```
+
+## Notes for AGP 8+
+
+- `namespace` is configured in Gradle. `package` attribute in AndroidManifest is removed and must not be added.
+
+## Changelog
+
+See CHANGELOG.md for release notes. Current version: 2.0.0
+
+## License
+
+Apache License 2.0
 
 ## Possible questions
 ### Why resulting apk is so big?
