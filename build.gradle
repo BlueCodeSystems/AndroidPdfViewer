@@ -1,18 +1,28 @@
 buildscript {
     repositories {
+        mavenLocal()
         google()
-        jcenter()
-        maven { url 'https://jitpack.io' }
+        mavenCentral()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:4.0.1'
+        classpath 'com.android.tools.build:gradle:8.6.0'
+        classpath 'io.codearte.gradle.nexus:gradle-nexus-staging-plugin:0.30.0'
     }
 }
 
 allprojects {
+    group = project.findProperty('GROUP') ?: project.group
+    version = project.findProperty('VERSION_NAME') ?: project.version
+
     repositories {
+        // Prefer local artifacts first during development
+        mavenLocal()
         google()
-        jcenter()
+        mavenCentral()
+        // Optional: keep JitPack for consumers if needed
         maven { url 'https://jitpack.io' }
     }
 }
+
+// Enable Nexus staging tasks like `closeAndReleaseRepository`
+apply plugin: 'io.codearte.nexus-staging'
