@@ -1,3 +1,16 @@
 jdk:
   - openjdk17
 
+before_install:
+  # Ensure Android SDK paths are set for Gradle/AGP
+  - echo "sdk.dir=$ANDROID_HOME" > local.properties
+  # Accept licenses non-interactively
+  - yes | ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager --licenses > /dev/null || true
+  # Install required SDK components
+  - ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager "platforms;android-35" "build-tools;35.0.0" "ndk;26.2.11394342"
+
+install:
+  # Derive owner and version for JitPack coordinates and publish to local Maven
+  - OWNER=$(git config --get remote.origin.url | sed -E 's#.*[:/ ]([^/]+)/[^/]+(\.git)?$#\1#')
+  - echo "Using GROUP=com.github.${OWNER} VERSION=${VERSION} (skipSigning)"
+  - ./gradlew --no-daemon -x test -x lint -PskipSigning=true -PGROUP=com.github.${OWNER} -PVERSION_NAME=${VERSION} :android-pdf-viewer:publishToMavenLocal
