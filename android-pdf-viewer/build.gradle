@@ -1,91 +1,23 @@
 apply plugin: 'com.android.library'
-apply plugin: 'maven'
-apply plugin: 'signing'
+apply from: '../maven.gradle'
 
 android {
-    compileSdkVersion 29
+    namespace "com.github.barteksc.pdfviewer"
+    compileSdk 35
+    buildToolsVersion "35.0.0"
 
     defaultConfig {
-        minSdkVersion 16
-        targetSdkVersion 29
-        versionCode 1
-        versionName "3.2.0-beta.1"
+        minSdk 28
+        targetSdk 35
     }
 }
 
 dependencies {
     implementation 'androidx.core:core:1.3.1'
-    api 'com.github.mhiew:pdfium-android:1.9.2'
+    def pdfiumGroup = project.findProperty('PDFIUM_GROUP') ?: 'com.github.mhiew'
+    def pdfiumArtifact = project.findProperty('PDFIUM_ARTIFACT') ?: 'pdfium-android'
+    def pdfiumVersion = project.findProperty('PDFIUM_VERSION') ?: '1.9.2'
+    api "${pdfiumGroup}:${pdfiumArtifact}:${pdfiumVersion}"
 }
 
-def getRepositoryUsername() {
-    return hasProperty('NEXUS_USERNAME') ? NEXUS_USERNAME : ""
-}
-
-def getRepositoryPassword() {
-    return hasProperty('NEXUS_PASSWORD') ? NEXUS_PASSWORD : ""
-}
-
-
-afterEvaluate { project ->
-    uploadArchives {
-        repositories {
-            mavenDeployer {
-                beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
-
-                repository(url: "https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/") {
-                    authentication(userName: getRepositoryUsername(), password: getRepositoryPassword())
-                }
-
-                snapshotRepository(url: "https://s01.oss.sonatype.org/content/repositories/snapshots/") {
-                    authentication(userName: getRepositoryUsername(), password: getRepositoryPassword())
-                }
-
-                pom.groupId = GROUP
-                pom.artifactId = POM_ARTIFACT_ID
-                pom.version = VERSION
-
-                pom.project {
-                    name 'AndroidPdfViewer'
-                    packaging 'aar'
-                    // optionally artifactId can be defined here
-                    description 'Android view for displaying PDFs rendered with PdfiumAndroid'
-                    url 'https://github.com/muthuraj57/AndroidPdfViewer'
-
-                    scm {
-                        url 'https://github.com/muthuraj57/AndroidPdfViewer'
-                        connection 'scm:git:https://github.com/muthuraj57/AndroidPdfViewer.git'
-                        developerConnection 'scm:git:git@github.com:muthuraj57/AndroidPdfViewer'
-                    }
-
-                    licenses {
-                        license {
-                            name 'The Apache License, Version 2.0'
-                            url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
-                        }
-                    }
-
-                    developers {
-                        developer {
-                            id 'muthuraj57'
-                            name 'Muthuraj'
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    signing {
-        sign configurations.archives
-    }
-
-    task sourcesJar(type: Jar) {
-        classifier = 'sources'
-        from android.sourceSets.getByName("main").java.srcDirs
-    }
-
-    artifacts {
-        archives sourcesJar
-    }
-}
+// Publishing, signing, central bundle tasks are applied from ../maven.gradle

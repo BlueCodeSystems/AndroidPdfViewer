@@ -1,2 +1,24 @@
 include ':android-pdf-viewer'
 include ':sample'
+
+// Optional: include a local pdfium-android fork as a composite build
+// Priority: explicit property -> env var -> conventional subfolder names
+def _pdfiumPath = gradle.startParameter.projectProperties.get('pdfiumLocalDir') ?: System.getenv('PDFIUM_LOCAL_DIR')
+def _candidates = []
+if (_pdfiumPath) _candidates << _pdfiumPath
+_candidates << 'pdfium-android'
+_candidates << 'android-pdfium'
+for (p in _candidates) {
+    def dir = file(p.toString())
+    if (dir.exists()) {
+        println "Including pdfium-android from ${dir} via composite build"
+        includeBuild(dir) {
+            dependencySubstitution {
+                substitute(module("com.github.mhiew:pdfium-android")).using(project(":"))
+                substitute(module("com.github.BlueCodeSystems:pdfium-android")).using(project(":"))
+                substitute(module("com.github.BlueCodeSystems:PdfiumAndroid")).using(project(":"))
+            }
+        }
+        break
+    }
+}

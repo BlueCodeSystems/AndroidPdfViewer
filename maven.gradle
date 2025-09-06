@@ -1,0 +1,157 @@
+apply plugin: 'maven-publish'
+apply plugin: 'signing'
+
+def isReleaseBuild() { !version.toString().contains('SNAPSHOT') }
+
+def getRepositoryUsername() { hasProperty('sonatypeUsername') ? sonatypeUsername : '' }
+
+def getRepositoryPassword() { hasProperty('sonatypePassword') ? sonatypePassword : '' }
+
+android {
+  publishing {
+    singleVariant("release") {
+      withSourcesJar()
+      withJavadocJar()
+    }
+  }
+}
+
+afterEvaluate { project ->
+  publishing {
+    publications {
+      maven(MavenPublication) {
+        from components.release
+        groupId = project.findProperty('GROUP') ?: project.group
+        artifactId = project.findProperty('POM_SETTING_ARTIFACT_ID') ?: project.name
+        version = project.findProperty('VERSION_NAME') ?: project.version
+        pom {
+          name = project.findProperty('POM_SETTING_NAME') ?: project.name
+          packaging = project.findProperty('POM_SETTING_PACKAGING') ?: 'aar'
+          description = project.findProperty('POM_SETTING_DESCRIPTION') ?: ''
+          url = project.findProperty('POM_SETTING_URL') ?: ''
+          scm {
+            url = project.findProperty('POM_SETTING_SCM_URL') ?: ''
+            connection = project.findProperty('POM_SETTING_SCM_CONNECTION') ?: ''
+            developerConnection = project.findProperty('POM_SETTING_SCM_DEV_CONNECTION') ?: ''
+          }
+          licenses {
+            license {
+              name = project.findProperty('POM_SETTING_LICENCE_NAME') ?: ''
+              url = project.findProperty('POM_SETTING_LICENCE_URL') ?: ''
+              distribution = project.findProperty('POM_SETTING_LICENCE_DIST') ?: 'repo'
+            }
+          }
+          developers {
+            developer {
+              id = project.findProperty('POM_SETTING_DEVELOPER_ID') ?: ''
+              name = project.findProperty('POM_SETTING_DEVELOPER_NAME') ?: ''
+            }
+          }
+        }
+      }
+    }
+    repositories {
+      // Local folder to stage a Central bundle for manual upload
+      maven {
+        name = "centralBundle"
+        url = uri("${buildDir}/central-bundle")
+      }
+
+      // Sonatype repositories (staging/snapshots)
+      maven {
+        def sonatypeRepositoryURL = isReleaseBuild() ?
+            "https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/" :
+            "https://s01.oss.sonatype.org/content/repositories/snapshots/"
+        url = sonatypeRepositoryURL
+        credentials {
+          username = getRepositoryUsername()
+          password = getRepositoryPassword()
+        }
+      }
+    }
+  }
+
+  signing {
+    if (project.hasProperty('skipSigning') && project.property('skipSigning').toString() == 'true') {
+      logger.lifecycle("Signing skipped due to -PskipSigning=true")
+    } else {
+      if (project.hasProperty('useGpgCmd') && project.property('useGpgCmd').toString() == 'true') {
+        useGpgCmd()
+      }
+      required {
+        isReleaseBuild() && (
+          gradle.taskGraph.hasTask(":publish") ||
+          gradle.taskGraph.hasTask(":publishToMavenLocal") ||
+          gradle.taskGraph.allTasks.any { it.name.toLowerCase().contains('publish') }
+        )
+      }
+      sign publishing.publications.maven
+    }
+  }
+
+  // Nexus staging configuration used by `closeAndReleaseRepository`
+  nexusStaging {
+    serverUrl = "https://s01.oss.sonatype.org/service/local/"
+    username = getRepositoryUsername()
+    password = getRepositoryPassword()
+  }
+
+  // Helper: package release artifacts into a convenient zip
+  tasks.register("packageReleaseZip", Zip) {
+    group = "distribution"
+    description = "Packages release AAR, POM, sources and javadoc into a zip"
+    dependsOn "assembleRelease", "sourcesJar", "javadocJar", "generatePomFileForMavenPublication"
+    from("$buildDir/outputs/aar") { include "*-release.aar" }
+    from("$buildDir/publications/maven") { include "pom-default.xml"; into("maven") }
+    from("$buildDir/libs") { include "*-sources.jar", "*-javadoc.jar" }
+    def artifactId = project.findProperty('POM_SETTING_ARTIFACT_ID') ?: project.name
+    def versionName = (project.version?.toString()) ?: (project.findProperty('VERSION_NAME') ?: 'unspecified')
+    archiveBaseName.set(artifactId)
+    archiveVersion.set(versionName)
+    destinationDirectory.set(file("$buildDir/releasePackage"))
+  }
+
+  // Generate checksums for all files in the Central bundle directory
+  tasks.register("generateCentralBundleChecksums") {
+    group = "publishing"
+    description = "Generates SHA-256 and SHA-512 checksums for Central bundle"
+    dependsOn "publishMavenPublicationToCentralBundleRepository"
+    doLast {
+      def dir = file("$buildDir/central-bundle")
+      if (!dir.exists()) return
+      dir.eachFileRecurse { f ->
+        if (f.isFile()) {
+          ["SHA-256":"sha256", "SHA-512":"sha512"].each { algo, ext ->
+            def md = java.security.MessageDigest.getInstance(algo)
+            f.withInputStream { is ->
+              byte[] buffer = new byte[8192]
+              int read
+              while ((read = is.read(buffer)) > -1) { md.update(buffer, 0, read) }
+            }
+            byte[] digest = md.digest()
+            def hex = digest.collect { String.format("%02x", it) }.join()
+            new File(f.parentFile, f.name + ".${ext}").text = hex
+          }
+        }
+      }
+    }
+  }
+
+  // Zip the Central bundle directory for manual upload to Maven Central portal
+  tasks.register("zipCentralBundle", Zip) {
+    group = "publishing"
+    description = "Zips the local Central bundle directory"
+    dependsOn "generateCentralBundleChecksums"
+    from(file("$buildDir/central-bundle"))
+    def artifactId = project.findProperty('POM_SETTING_ARTIFACT_ID') ?: project.name
+    def versionName = (project.version?.toString()) ?: (project.findProperty('VERSION_NAME') ?: 'unspecified')
+    archiveBaseName.set("central-bundle-" + artifactId)
+    archiveVersion.set(versionName)
+    destinationDirectory.set(layout.buildDirectory.dir("distributions").get().asFile)
+  }
+
+  // Optional: Automatically publish to mavenLocal after build/assembleRelease
+  if (project.hasProperty('autoLocalMaven') && project.property('autoLocalMaven').toString() == 'true') {
+    tasks.matching { it.name in ['build', 'assembleRelease'] }.configureEach { finalizedBy 'publishToMavenLocal' }
+  }
+}
