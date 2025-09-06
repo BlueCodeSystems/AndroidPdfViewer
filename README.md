@@ -16,8 +16,11 @@ allprojects {
 ```
 Add the dependency
 ```groovy
-// This fork
-implementation 'bluecode:AndroidPdfViewer:2.0.0'
+// Maven Central (preferred)
+implementation 'io.github.bluecodesystems:AndroidPdfViewer:2.0.0'
+
+// Or via JitPack (alternative)
+// implementation 'com.github.BlueCodeSystems:AndroidPdfViewer:2.0.0'
 ```
 
 ---

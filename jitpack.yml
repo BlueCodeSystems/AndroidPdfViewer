@@ -14,7 +14,7 @@ install:
   - ORIGIN=$(git config --get remote.origin.url)
   - OWNER=$(echo "$ORIGIN" | sed -E 's#.*[:/ ]([^/]+)/[^/]+(\.git)?$#\1#')
   - OWNER_LC=$(echo "$OWNER" | tr '[:upper:]' '[:lower:]')
-  - if echo "$OWNER_LC" | grep -qi 'bluecode'; then GROUP=bluecode; else GROUP=com.github.${OWNER}; fi
+  - GROUP=com.github.${OWNER}
   - echo "Origin=$ORIGIN Owner=$OWNER Using GROUP=${GROUP} VERSION=${VERSION} (skipSigning)"
   - ./gradlew --no-daemon -x test -x lint -PskipSigning=true -PGROUP=${GROUP} -PVERSION_NAME=${VERSION} :android-pdf-viewer:publishToMavenLocal
   # Verify artifact installed to local Maven
