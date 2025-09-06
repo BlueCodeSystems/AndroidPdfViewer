@@ -16,7 +16,8 @@ allprojects {
 ```
 Add the dependency
 ```groovy
-implementation 'io.github.muthuraj57:AndroidPdfViewer:1.1.0'
+// This fork
+implementation 'bluecode:AndroidPdfViewer:2.0.0'
 ```
 
 ---

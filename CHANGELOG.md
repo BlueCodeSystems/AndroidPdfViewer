@@ -169,3 +169,22 @@ All exceptions are delivered to old Configurator#onError() listener.
 
 ## 1.0.0 (2016-06-06)
 * Initial release
+## [2.0.0] - 2025-09-06
+
+Breaking Changes
+- Migrate publishing from deprecated `maven`/`uploadArchives` to `maven-publish` with `signing` (commit 4c32017). This changes publishing tasks and properties used by automated pipelines.
+- Raise `minSdk` to 28 for both the library and sample to align with modern dependencies and toolchain.
+
+Features / Improvements
+- Upgrade to Gradle 8.7 and Android Gradle Plugin 8.6.0 to support `compileSdk`/`targetSdk` 35 and Build Tools 35.0.0 (commit bcb66a0).
+- Add Central bundle tasks: local bundle repo, checksum generation, and zip packaging for manual Central uploads (maven.gradle).
+- Add composite build substitution for local Pdfium forks to ease development (settings.gradle).
+
+Fixes
+- Remove deprecated `package` attribute from library and sample AndroidManifest.xml files to comply with AGP 8+ (commits 67a0bde, ffa8091).
+
+Dependency Updates
+- Switch Pdfium dependency to `com.github.BlueCodeSystems:PdfiumAndroid:v2.0.0` via gradle.properties and flexible coordinates in the module (android-pdf-viewer/build.gradle).
+
+CI / Build
+- Add/extend JitPack config to install Android SDK/NDK, publish to local Maven (`publishToMavenLocal`), and derive groupId from repo origin (commits 5f910af, 9f9c6e8).
