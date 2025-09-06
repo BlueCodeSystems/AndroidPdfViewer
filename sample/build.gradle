@@ -1,12 +1,14 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 29
+    namespace "com.pdfviewer"
+    compileSdk 35
+    buildToolsVersion "35.0.0"
 
     defaultConfig {
         applicationId "com.pdfviewer"
-        minSdkVersion 16
-        targetSdkVersion 29
+        minSdk 28
+        targetSdk 35
         versionCode 3
         versionName "3.0.0"
     }
